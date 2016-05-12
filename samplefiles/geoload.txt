@@ -1,0 +1,113 @@
+#Just looks at Google and outputs a JSON File
+#Doesn't actually add any data.
+#Don't want to have to drop tables everytime I look for a field
+
+
+import urllib
+# import sqlite3
+import json
+import time
+import ssl
+import mysql.connector
+
+conn = {
+  'user': 'root',
+  'password': 'root',
+  'host': 'localhost:8889',
+  'database': 'sampledb',
+  'raise_on_warnings': True,
+}
+try:
+    link = mysql.connector.connect(**conn)
+    print "It worked!"
+except:
+    print "IT'S ON FIRE!"
+
+
+locations = ['20.4537286, -90.2884959', '38.8992651,-77.1546519', '32.9173096,-89.8334877']
+key =  ""
+serviceurl = "https://maps.googleapis.com/maps/api/place/search/json?key="
+radius = "700000"
+keyword = '%22sample%22'
+
+# Deal with SSL certificate anomalies Python > 2.7
+# scontext = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+scontext = None
+
+
+#THIS IS THE CODE WHICH PULLS FROM GOOGLE!
+for spot in locations:
+    print spot
+    url = serviceurl+key+"&sensor=false&location="+spot+"&radius="+radius+"&keyword="+keyword
+    uh = urllib.urlopen(url)
+    data = uh.read()
+    try: js = json.loads(str(data))
+    except: js = None
+    if 'status' not in js or js['status'] != 'OK':
+        print '==== Failure To Retrieve ===='
+        print data
+        continue
+    try:
+        with open('sampledata.json', 'w') as outfile:
+            json.dump(js, outfile, sort_keys = True, indent = 4)
+    except:
+        print js
+
+        
+# conn = sqlite3.connect('sample.sqlite')
+cur = conn.cursor()
+
+cur.execute('''
+CREATE TABLE IF NOT EXISTS Locations (
+    place_id TEXT UNIQUE PRIMARY KEY, 
+    lat VARCHAR UNIQUE,
+    lng VARCHAR UNIQUE,
+    name STRING UNIQUE,
+    sampletype1 BOOLEAN,
+    sampletype2 BOOLEAN,
+    sampletype3 BOOLEAN)''')
+
+typesofplaces = ['sampletype1', 'sampletype2', 'sampletype3']
+output = open('output.json')
+full = json.load(output)
+
+results = (full['results'])
+
+def sort():
+    global n
+    for items in results:
+        for types in items['types']:
+            if types == typesofplaces[n]:
+                place_id = items['place_id']
+                lat = items['geometry']['location']['lat']
+                lng = items['geometry']['location']['lng']
+                name = items['name']
+                sampletype1 = types == "sampletype1"
+                sampletype2 = types == "sampletype2"
+                cur.execute('''INSERT OR IGNORE INTO Locations (place_id, lat, lng, name)
+                    VALUES ( ?, ?, ?, ?)''', ( place_id, lat, lng, name) )
+
+                if types == "sampletype1":
+                    cur.execute('''UPDATE Locations SET sampletype1 = 1
+                        WHERE place_id = ?''', (place_id,))
+
+                if types == "sampletype2":
+                    cur.execute('''UPDATE Locations SET sampletype2 = 1
+                        WHERE place_id = ?''', (place_id,))
+
+                if types == "sampletype3":
+                    cur.execute('''UPDATE Locations SET sampletype3 = 1
+                        WHERE place_id = ?''', (place_id,))
+
+                conn.commit()
+
+
+    n += 1
+
+    if n < len(typesofplaces):
+        sort()
+    else:
+        conn.close()
+
+n = 0          
+sort()

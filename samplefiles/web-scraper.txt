@@ -1,0 +1,32 @@
+# Remember, Python is not on Windows
+# Go to https://www.python.org/downloads
+# Get Python 2.X for this code to work
+#
+# Also get BeautifulSoup from
+# crummy.com/software/BeautifulSoup/
+# and put the file in the same directory.
+#
+# It's not a straight forward download,
+# but I believe in you. You'll be doing
+# much more complicated things soon.
+
+# The '*' means all. This pulls the url
+# Much more difficult without Soup.
+import urllib
+from BeautifulSoup import *
+
+# You need the 'http://www.'
+url = raw_input('Enter url - ')
+html = urllib.urlopen(url).read()
+# If you printed here, it'd be raw html
+
+soup = BeautifulSoup(html)
+# Printing here is nicer html
+
+# Retrieves all of the anchor tags
+# 'a' could be any html tag.
+tags = soup('a')
+for tag in tags:
+    print tag.get('href', None)
+
+ 

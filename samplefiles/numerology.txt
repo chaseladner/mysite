@@ -1,0 +1,21 @@
+def numerology():
+	print "This program will take any alphabetic input and and assign it the proper number (1-26) and add it together. See what you get!"
+	original = raw_input("Write something! ")
+	raw = original
+	count = 0
+	alphabet = {"a":1, "b":2, "c":3, 'd':4, 'e':5, 'f':6, 'g':7, 'h':8, 'i':9, 'j':10, 'k':11, 'l':12, 'm':13, 'n':14, 'o':15, 'p':16, 'q':17, 'r':18, 's':19, 't':20, 'u':21, 'v':22, 'w':23, 'x':24, 'y':25, 'z':26}
+	raw = raw.strip()
+	raw = raw.lower()
+	letters = list(raw)
+	for letter in letters:
+		if letter not in alphabet:
+			print "Only letters, please!"
+			numerology()
+		else:
+			count = count + alphabet[letter]
+			numerology()
+			
+	print original
+	print count
+
+numerology()

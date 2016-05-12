@@ -1,0 +1,63 @@
+import sqlite3
+import json
+import codecs
+
+
+#Deals with Database stuff. Make sure tables are dropped if new information is added.
+conn = sqlite3.connect('sampledb.sqlite')
+cur = conn.cursor()
+
+cur.execute('''
+CREATE TABLE IF NOT EXISTS Locations (
+    place_id TEXT UNIQUE PRIMARY KEY, 
+    lat VARCHAR UNIQUE,
+    lng VARCHAR UNIQUE,
+    name STRING UNIQUE,
+    sampletype1 BOOLEAN,
+    sampletype2 BOOLEAN,
+    sampletype3 BOOLEAN)''')
+
+typesofplaces = ['sampletype1', 'sampletype2', 'sampletype3']
+sampledb = open('sampledb.json')
+full = json.load(sampledb)
+
+results = (full['results'])
+
+def sort():
+    global n
+    for items in results:
+        for types in items['types']:
+            if types == typesofplaces[n]:
+                place_id = items['place_id']
+                lat = items['geometry']['location']['lat']
+                lng = items['geometry']['location']['lng']
+                name = items['name']
+                sampletype1 = types == "sampletype1"
+                sampletype2 = types == "sampletype2"
+                cur.execute('''INSERT OR IGNORE INTO Locations (place_id, lat, lng, name)
+                    VALUES ( ?, ?, ?, ?)''', ( place_id, lat, lng, name) )
+
+                if types == "sampletype1":
+                    cur.execute('''UPDATE Locations SET sampletype1 = 1
+                        WHERE place_id = ?''', (place_id,))
+
+                if types == "sampletype2":
+                    cur.execute('''UPDATE Locations SET sampletype2 = 1
+                        WHERE place_id = ?''', (place_id,))
+
+                if types == "sampletype3":
+                    cur.execute('''UPDATE Locations SET sampletype3 = 1
+                        WHERE place_id = ?''', (place_id,))
+
+                conn.commit()
+
+
+    n += 1
+
+    if n < len(typesofplaces):
+        
+        sort()
+
+n = 0          
+sort()
+
